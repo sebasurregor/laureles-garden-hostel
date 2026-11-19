@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block titulo %}Historial{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+    <div>
+        <h1>Historial de estancias</h1>
+        <p>Todas las estancias por fecha de ingreso. Reemplaza la consulta del libro físico.</p>
+    </div>
+</div>
+
+<div class="panel">
+    <form method="get" class="filtros">
+        <div class="campo"><label for="desde">Desde</label><input type="date" id="desde" name="desde" value="{{ desde }}"></div>
+        <div class="campo"><label for="hasta">Hasta</label><input type="date" id="hasta" name="hasta" value="{{ hasta }}"></div>
+        <div class="campo"><label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                {% for clave, texto in ESTADOS_ESTANCIA.items() %}<option value="{{ clave }}" {% if estado == clave %}selected{% endif %}>{{ texto }}</option>{% endfor %}
+            </select>
+        </div>
+        <button type="submit">Filtrar</button>
+    </form>
+</div>
+
+<div class="panel">
+    <div class="titulo-panel"><h2>{{ total }} estancia{{ 's' if total != 1 }}</h2></div>
+    {% if filas %}
+    <div class="tabla-contenedor">
+        <table>
+            <thead><tr><th>Ingreso</th><th>Huésped</th><th>Documento</th><th>Hab.</th><th>Canal</th><th>Procedencia → destino</th><th>Estado</th></tr></thead>
+            <tbody>
+            {% for e in filas %}
+            <tr>
+                <td>{{ e.fecha_ingreso|fecha }}</td>
+                <td><a class="nombre-huesped" href="{{ url_for('huespedes.ficha', huesped_id=e.huesped_id) }}#estancia-{{ e.id }}">{{ e.nombres }} {{ e.apellidos }}</a>{{ m.demo(e.huesped_demo) }}</td>
+                <td class="documento">{{ e.tipo_documento }} {{ enmascarar(e.documento_ultimos) }}</td>
+                <td>{{ e.habitacion or '—' }}</td>
+                <td>{{ e.canal or '—' }}</td>
+                <td>{{ e.procedencia }} → {{ e.destino }}</td>
+                <td>{{ m.estado_estancia(e.estado) }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {{ m.paginacion(pagina, paginas, 'huespedes.historial', desde=desde, hasta=hasta, estado=estado) }}
+    {% else %}<p class="vacio">No hay estancias en ese rango.</p>{% endif %}
+</div>
+{% endblock %}

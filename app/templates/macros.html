@@ -1,0 +1,39 @@
+{# Piezas reutilizables. El error de cada campo se muestra junto al campo. #}
+
+{% macro campo(f, ayuda=None, clase='', requerido=None) %}
+{% set req = requerido if requerido is not none else f.flags.required %}
+<div class="campo {{ clase }} {% if f.errors %}con-error{% endif %}">
+    <label for="{{ f.id }}">{{ f.label.text }}{% if req %} <span class="requerido" aria-hidden="true">*</span>{% endif %}</label>
+    {% set atributos = dict(kwargs) %}
+    {% if f.errors %}{% set _ = atributos.update({'aria-invalid': 'true', 'aria-describedby': f.id ~ '-error'}) %}
+    {% elif ayuda %}{% set _ = atributos.update({'aria-describedby': f.id ~ '-ayuda'}) %}{% endif %}
+    {{ f(**atributos) }}
+    {% if ayuda %}<p class="ayuda" id="{{ f.id }}-ayuda">{{ ayuda }}</p>{% endif %}
+    {% if f.errors %}<p class="error-campo" id="{{ f.id }}-error">{{ f.errors[0] }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro casilla(f, ayuda=None, clase='') %}
+<div class="campo {{ clase }} {% if f.errors %}con-error{% endif %}">
+    <div class="casilla">
+        {{ f(**kwargs) }}
+        <label for="{{ f.id }}">{{ f.label.text }}</label>
+    </div>
+    {% if ayuda %}<p class="ayuda">{{ ayuda }}</p>{% endif %}
+    {% if f.errors %}<p class="error-campo">{{ f.errors[0] }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro estado_estancia(estado) %}<span class="estado {{ estado }}">{{ ESTADOS_ESTANCIA.get(estado, estado) }}</span>{% endmacro %}
+
+{% macro demo(es_demo) %}{% if es_demo %} <span class="estado demo" title="Dato de prueba">DEMO</span>{% endif %}{% endmacro %}
+
+{% macro paginacion(pagina, paginas, endpoint) %}
+{% if paginas > 1 %}
+<nav class="paginacion" aria-label="Páginas">
+    {% if pagina > 1 %}<a class="boton secundario pequeno" href="{{ url_for(endpoint, pagina=pagina-1, **kwargs) }}">← Anterior</a>{% endif %}
+    <span>Página {{ pagina }} de {{ paginas }}</span>
+    {% if pagina < paginas %}<a class="boton secundario pequeno" href="{{ url_for(endpoint, pagina=pagina+1, **kwargs) }}">Siguiente →</a>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}

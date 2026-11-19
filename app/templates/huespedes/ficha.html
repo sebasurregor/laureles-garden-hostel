@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block titulo %}{{ h.nombres }} {{ h.apellidos }}{% endblock %}
+{% block contenido %}
+{% set aqui = request.path %}
+<div class="cabecera">
+    <div>
+        <h1>{{ h.nombres }} {{ h.apellidos }}{{ m.demo(h.es_demo) }}</h1>
+        <p>Ficha del huésped · {{ estancias|length }} estancia{{ 's' if estancias|length != 1 }}{% if desde or hasta %} en el rango filtrado{% endif %}</p>
+    </div>
+    {% if not en_casa %}
+    <a class="boton grande" href="{{ url_for('huespedes.registro', huesped=h.id) }}">+ Nueva estancia</a>
+    {% endif %}
+</div>
+
+<div class="dos-columnas">
+    <section class="panel">
+        <h2>Datos personales</h2>
+        <dl class="datos">
+            <dt>Documento</dt>
+            <dd>
+                {{ TIPOS_DOCUMENTO[h.tipo_documento] }} ·
+                {% if documento_completo %}
+                <span class="documento">{{ documento_completo }}</span>
+                {% else %}
+                <span class="documento">{{ documento_mascara }}</span>
+                <form method="post" action="{{ url_for('huespedes.ver_documento', huesped_id=h.id) }}" class="en-linea">
+                    {{ form_simple.csrf_token }}
+                    <button type="submit" class="secundario pequeno">Ver completo</button>
+                </form>
+                {% endif %}
+            </dd>
+            <dt>Nacionalidad</dt><dd>{{ h.nacionalidad }}</dd>
+            <dt>Teléfono</dt><dd>{{ contacto.telefono or '—' }}</dd>
+            <dt>Correo</dt><dd>{{ contacto.correo or '—' }}</dd>
+            <dt>Nacimiento</dt><dd>{{ h.fecha_nacimiento|fecha }}</dd>
+            <dt>Autorización de datos</dt>
+            <dd>{% if h.acepta_tratamiento_datos %}Sí, {{ h.fecha_aceptacion_datos|fecha_hora }}{% else %}<span class="estado cancelada">Pendiente</span> (pídela en la próxima estancia){% endif %}</dd>
+            <dt>Registrado</dt><dd>{{ h.creado_en|fecha }}</dd>
+        </dl>
+    </section>
+
+    <section class="panel">
+        <h2>Filtrar estancias por fecha de ingreso</h2>
+        <form method="get" action="{{ url_for('huespedes.ficha', huesped_id=h.id) }}" class="filtros">
+            <div class="campo"><label for="desde">Desde</label><input type="date" id="desde" name="desde" value="{{ desde or '' }}"></div>
+            <div class="campo"><label for="hasta">Hasta</label><input type="date" id="hasta" name="hasta" value="{{ hasta or '' }}"></div>
+            <button type="submit">Filtrar</button>
+            {% if desde or hasta %}<a class="boton secundario" href="{{ url_for('huespedes.ficha', huesped_id=h.id) }}">Quitar filtro</a>{% endif %}
+        </form>
+    </section>
+</div>
+
+<section class="panel">
+    <h2>Historial de estancias</h2>
+    {% for e in estancias %}
+    <article class="estancia-historial" id="estancia-{{ e.id }}">
+        <header>
+            <div>
+                <strong>{{ e.fecha_ingreso|fecha }} → {{ e.fecha_salida_prevista|fecha }}</strong>
+                · hab. {{ e.habitacion or '—' }} · {{ e.canal or 'Canal sin dato' }}
+            </div>
+            <div>{{ m.estado_estancia(e.estado) }}</div>
+        </header>
+        <p class="ayuda">De {{ e.procedencia }} hacia {{ e.destino }}
+            {% if e.checkin_en %}· Llegada confirmada {{ e.checkin_en|fecha_hora }}{% endif %}
+            {% if e.checkout_en %}· Salió {{ e.checkout_en|fecha_hora }}{% endif %}</p>
+        {% if e.observaciones %}<p class="ayuda">Observaciones: {{ e.observaciones }}</p>{% endif %}
+
+        {% if e.estado == 'pendiente' %}
+        <div class="acciones-estancia">
+            <form method="post" action="{{ url_for('estancias.confirmar_llegada', estancia_id=e.id) }}">
+                {{ form_simple.csrf_token }}
+                <input type="hidden" name="volver" value="{{ aqui }}">
+                <button type="submit" class="pequeno">Confirmar llegada</button>
+            </form>
+        </div>
+        {% elif e.estado == 'en_casa' %}
+        <div class="acciones-estancia">
+            <form method="post" action="{{ url_for('estancias.marcar_pendiente', estancia_id=e.id) }}">
+                {{ form_simple.csrf_token }}
+                <input type="hidden" name="volver" value="{{ aqui }}">
+                <button type="submit" class="secundario pequeno" data-confirmar="¿Revertir el estado de llegada a pendiente?">Marcar pendiente</button>
+            </form>
+            <form method="post" action="{{ url_for('estancias.salida', estancia_id=e.id) }}">
+                {{ form_simple.csrf_token }}
+                <input type="hidden" name="volver" value="{{ aqui }}">
+                <button type="submit" class="secundario pequeno" data-confirmar="¿Registrar la salida?">Registrar salida</button>
+            </form>
+        </div>
+        {% endif %}
+    </article>
+    {% else %}
+    <p class="vacio">No hay estancias {% if desde or hasta %}en ese rango de fechas{% endif %}.</p>
+    {% endfor %}
+</section>
+{% endblock %}

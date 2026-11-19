@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titulo %}Política de tratamiento de datos{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+    <div>
+        <h1>Política de tratamiento de datos personales</h1>
+        <p>Resumen para leer o mostrar al huésped antes de pedir su autorización (Ley 1581 de 2012 y Decreto 1377 de 2013).</p>
+    </div>
+</div>
+<div class="panel politica">
+    <p class="mensaje aviso">Texto base de ejemplo preparado por el equipo del proyecto. La gerencia debe revisarlo y
+        completar los datos del responsable antes de usarlo con huéspedes reales.</p>
+
+    <h2>¿Quién es responsable de sus datos?</h2>
+    <p>{{ NOMBRE_HOSTAL }}, Medellín, Colombia. Para consultas o reclamos sobre sus datos puede escribir al correo o
+        teléfono de contacto del hostal que indique la recepción.</p>
+
+    <h2>¿Qué datos pedimos?</h2>
+    <p>Nombres y apellidos, tipo y número de documento, nacionalidad, teléfono, correo (opcional), fecha de nacimiento
+        (opcional), procedencia, destino y fechas de la estancia.</p>
+
+    <h2>¿Para qué los usamos?</h2>
+    <ul>
+        <li>Registrar su estancia y cumplir la obligación legal de la Tarjeta de Registro de Alojamiento (TRA) ante el
+            Ministerio de Comercio, Industria y Turismo y, si es extranjero, el reporte SIRE ante Migración Colombia.</li>
+        <li>Llevar el control de las estancias y la seguridad del hostal.</li>
+        <li>Contactarlo sobre su reserva o estancia.</li>
+    </ul>
+    <p>No vendemos ni compartimos sus datos con terceros, salvo con las autoridades que la ley exige.</p>
+
+    <h2>¿Cómo los protegemos?</h2>
+    <p>El documento, el teléfono y el correo se guardan cifrados. Solo el personal autorizado del hostal accede al
+        sistema, con usuario y contraseña, y cada consulta del documento completo queda registrada.</p>
+
+    <h2>Sus derechos</h2>
+    <p>Usted puede conocer, actualizar, rectificar y solicitar la supresión de sus datos (cuando no exista una
+        obligación legal de conservarlos), pedir prueba de esta autorización y presentar quejas ante la
+        Superintendencia de Industria y Comercio.</p>
+
+    <h2>Autorización</h2>
+    <p>Al aceptar en la recepción, usted autoriza de forma previa, expresa e informada el tratamiento de sus datos para
+        las finalidades descritas. La fecha y hora de la autorización quedan guardadas en su ficha.</p>
+</div>
+{% endblock %}

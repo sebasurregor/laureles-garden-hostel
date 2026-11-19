@@ -1,0 +1,20 @@
+# Secretos: nunca subir
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Respaldos de la base de datos (contienen datos personales)
+backups/
+*.dump
+*.sql.gz
+
+# Logs
+logs/
+*.log

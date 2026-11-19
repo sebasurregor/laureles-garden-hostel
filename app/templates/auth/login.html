@@ -1,0 +1,39 @@
+{% import "macros.html" as m with context %}
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Iniciar sesión · {{ NOMBRE_HOSTAL }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icono.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body>
+<main class="pagina-centrada">
+    <div class="caja-login">
+        <p class="etiqueta-version">{{ NOMBRE_HOSTAL }} · v{{ APP_VERSION }}</p>
+        <h1>Acceso a recepción</h1>
+        <p class="sub">Ingresa tus credenciales autorizadas para consultar y gestionar huéspedes.</p>
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+        <div class="mensajes" role="status" aria-live="polite">
+            {% for categoria, texto in mensajes %}
+            <p class="mensaje {{ categoria }}">{{ texto }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+            {{ form.csrf_token }}
+            {% if siguiente %}<input type="hidden" name="siguiente" value="{{ siguiente }}">{% endif %}
+            {{ m.campo(form.usuario, requerido=true, autocomplete="username", autofocus=true, placeholder="Ej. recepcion") }}
+            {{ m.campo(form.contrasena, requerido=true, autocomplete="current-password", placeholder="••••••••") }}
+            <button type="submit" class="grande">Ingresar al panel →</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block titulo %}Llegadas pendientes{% endblock %}
+{% block contenido %}
+{% set aqui = request.full_path.rstrip('?') %}
+<div class="cabecera">
+    <div>
+        <h1>Llegadas pendientes</h1>
+        <p>{{ hoy|fecha }} · Confirma la llegada de los huéspedes cuando ingresen al hostal.</p>
+    </div>
+    <a class="boton grande" href="{{ url_for('huespedes.registro', estado='pendiente') }}">+ Nueva llegada pendiente</a>
+</div>
+
+<section class="panel" aria-labelledby="t-pendientes">
+    <div class="titulo-panel">
+        <h2 id="t-pendientes">Pendientes de llegada ({{ total }})</h2>
+    </div>
+    {% if pendientes %}
+    <div class="tabla-contenedor">
+        <table>
+            <thead>
+                <tr>
+                    <th>Huésped</th>
+                    <th>Documento</th>
+                    <th>Hab.</th>
+                    <th>Canal</th>
+                    <th>Ingreso previsto</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for e in pendientes %}
+            <tr {% if e.fecha_ingreso <= hoy %}class="fila-alerta"{% endif %}>
+                <td>
+                    <a class="nombre-huesped" href="{{ url_for('huespedes.ficha', huesped_id=e.huesped_id) }}">{{ e.nombres }} {{ e.apellidos }}</a>{{ m.demo(e.huesped_demo) }}
+                </td>
+                <td class="documento">{{ e.tipo_documento }} {{ enmascarar(e.documento_ultimos) }}</td>
+                <td>{{ e.habitacion or '—' }}</td>
+                <td>{{ e.canal or '—' }}</td>
+                <td>
+                    {{ e.fecha_ingreso|fecha }}
+                    {% if e.fecha_ingreso < hoy %}<span class="estado cancelada">Atrasada</span>
+                    {% elif e.fecha_ingreso == hoy %}<span class="estado llega-hoy">Llega hoy</span>{% endif %}
+                </td>
+                <td>{{ m.estado_estancia(e.estado) }}</td>
+                <td class="numero">
+                    <form method="post" action="{{ url_for('estancias.confirmar_llegada', estancia_id=e.id) }}">
+                        {{ form_simple.csrf_token }}
+                        <input type="hidden" name="volver" value="{{ aqui }}">
+                        <button type="submit" class="pequeno">Confirmar llegada</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {{ m.paginacion(pagina, paginas, 'estancias.llegadas') }}
+    {% else %}
+    <p class="vacio">No hay huéspedes pendientes de llegada en este momento.</p>
+    {% endif %}
+</section>
+{% endblock %}

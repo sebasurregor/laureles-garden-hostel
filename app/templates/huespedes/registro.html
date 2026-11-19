@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block titulo %}Registrar huésped{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+    <div>
+        <h1>Registrar huésped</h1>
+        <p>En el orden del mostrador: documento → datos personales → estancia. Los campos con <span class="requerido">*</span> son obligatorios.</p>
+    </div>
+</div>
+
+<div class="panel">
+    {% if coincidencia %}
+    <div class="mensaje {% if coincidencia.en_casa %}error{% else %}info{% endif %} aviso-huesped" role="status">
+        {% if coincidencia.confirmado %}
+        Nueva estancia para <strong>{{ coincidencia.nombres }} {{ coincidencia.apellidos }}</strong> (huésped que regresa). Revisa que sus datos de contacto sigan vigentes.
+        {% elif coincidencia.en_casa %}
+        <strong>{{ coincidencia.nombres }} {{ coincidencia.apellidos }}</strong> ya figura en casa. <a href="{{ url_for('huespedes.ficha', huesped_id=coincidencia.id) }}">Ver su ficha</a>.
+        {% else %}
+        Este documento ya está registrado a nombre de <strong>{{ coincidencia.nombres }} {{ coincidencia.apellidos }}</strong>
+        ({{ coincidencia.estancias }} estancia{{ 's' if coincidencia.estancias != 1 }}). Revisa los datos y pulsa
+        <strong>“Crear nueva estancia”</strong>: se usará el mismo huésped, sin duplicarlo.
+        {% endif %}
+    </div>
+    {% endif %}
+    <div id="aviso-documento" class="mensaje info aviso-huesped oculto" role="status" aria-live="polite"></div>
+
+    <form method="post" novalidate id="form-registro" data-verificar-url="{{ url_for('huespedes.verificar_documento') }}">
+        {{ form.csrf_token }}
+        {{ form.huesped_existente_id }}
+
+        <h2 class="seccion-form"><span>01</span> Documento</h2>
+        <div class="rejilla">
+            {{ m.campo(form.tipo_documento, requerido=true) }}
+            {{ m.campo(form.numero_documento, requerido=true, autocomplete="off", inputmode="text", maxlength=30,
+                       ayuda="Si el huésped ya vino antes, el sistema lo reconoce automáticamente.") }}
+        </div>
+
+        <h2 class="seccion-form"><span>02</span> Datos personales</h2>
+        <div class="rejilla">
+            {{ m.campo(form.nombres, requerido=true, maxlength=250, autocomplete="off") }}
+            {{ m.campo(form.apellidos, requerido=true, maxlength=250, autocomplete="off") }}
+            {{ m.campo(form.nacionalidad, requerido=true, maxlength=60, list="lista-paises", placeholder="Ej. Colombia") }}
+            {{ m.campo(form.telefono, requerido=true, inputmode="tel", placeholder="+57 300 123 4567") }}
+            {{ m.campo(form.correo, inputmode="email", placeholder="Opcional") }}
+            {{ m.campo(form.fecha_nacimiento, type="date") }}
+            <div class="ancho-completo caja-autorizacion">
+                {{ m.casilla(form.acepta_datos, ayuda="Léele o muéstrale al huésped la política de tratamiento de datos.") }}
+                <a href="{{ url_for('huespedes.politica_datos') }}" target="_blank" rel="noopener">Ver política de tratamiento de datos</a>
+            </div>
+        </div>
+        <datalist id="lista-paises">
+            {% for p in ['Colombia','Venezuela','Estados Unidos','Alemania','Francia','España','Argentina','México','Chile','Perú','Ecuador','Brasil','Países Bajos','Reino Unido','Canadá','Italia','Suiza'] %}<option value="{{ p }}">{% endfor %}
+        </datalist>
+
+        <h2 class="seccion-form"><span>03</span> Estancia</h2>
+        <div class="rejilla">
+            {{ m.campo(form.estado_llegada, requerido=true,
+                       ayuda="Elige «Pendiente de llegada» si el huésped aún no ingresa al hostal (HU-06).") }}
+            {{ m.campo(form.canal, requerido=true) }}
+            {{ m.campo(form.habitacion, maxlength=20, placeholder="Opcional. Ej. 101 o Dorm 2") }}
+            <div></div>
+            {{ m.campo(form.fecha_ingreso, requerido=true, type="date") }}
+            {{ m.campo(form.fecha_salida_prevista, requerido=true, type="date") }}
+            {{ m.campo(form.procedencia, requerido=true, maxlength=250, placeholder="Ciudad o país de donde viene") }}
+            {{ m.campo(form.destino, requerido=true, maxlength=250, placeholder="Ciudad o país a donde va") }}
+            {{ m.campo(form.observaciones, clase="ancho-completo", maxlength=500, rows=2,
+                       placeholder="Opcional. No escribas datos sensibles aquí.") }}
+        </div>
+
+        <div class="acciones">
+            <span class="ayuda" id="estado-formulario" role="status" aria-live="polite">Los datos se validan antes de guardarse.</span>
+            <button type="submit" class="grande">
+                {% if form.huesped_existente_id.data %}Crear nueva estancia{% else %}Registrar huésped{% endif %} →
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

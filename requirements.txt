@@ -1,0 +1,19 @@
+# Base del equipo
+Flask>=3.1,<4
+psycopg[binary]>=3.2,<4
+psycopg-pool>=3.2,<4
+python-dotenv>=1,<2
+
+# Seguridad
+Flask-WTF>=1.2,<2              # formularios y protección CSRF
+cryptography>=43               # cifrado Fernet de documento, teléfono y correo
+
+# Servidores de producción (Waitress en Windows, Gunicorn en Linux/nube)
+waitress>=3,<4
+gunicorn>=23,<24; sys_platform != "win32"
+
+# Windows no trae la base de zonas horarias; se necesita para mostrar la hora de Colombia.
+tzdata>=2024.1
+
+# Pruebas
+pytest>=8

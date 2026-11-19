@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block titulo %}Buscar huésped{% endblock %}
+{% block contenido %}
+<div class="cabecera">
+    <div>
+        <h1>Buscar huésped</h1>
+        <p>Encuentra registros por nombre, apellidos o número de documento completo.</p>
+    </div>
+    <a class="boton grande" href="{{ url_for('huespedes.registro') }}">+ Registrar huésped</a>
+</div>
+
+<section class="panel" aria-labelledby="t-busqueda">
+    <h2 id="t-busqueda" class="solo-lector">Formulario de búsqueda</h2>
+    <form method="get" action="{{ url_for('huespedes.buscar') }}" class="barra-busqueda" role="search">
+        <div class="campo campo-crece">
+            <label for="q">Nombre o número de documento</label>
+            <input
+                type="search"
+                id="q"
+                name="q"
+                value="{{ q }}"
+                placeholder="Ej. Ana Gómez, Peña o 1036555210"
+                autocomplete="off"
+                autofocus
+            >
+        </div>
+        <button type="submit">Buscar</button>
+        {% if q %}
+        <a class="boton secundario" href="{{ url_for('huespedes.buscar') }}">Limpiar</a>
+        {% endif %}
+    </form>
+    <p class="ayuda">La búsqueda por nombre ignora tildes y mayúsculas. Para buscar por documento, ingresa el número completo (con o sin puntos).</p>
+</section>
+
+{% if q %}
+<section class="panel" aria-labelledby="t-resultados">
+    <div class="titulo-panel">
+        <h2 id="t-resultados">
+            {% if total == 1 %}1 huésped encontrado{% else %}{{ total }} huéspedes encontrados{% endif %}
+            para «{{ q }}»
+        </h2>
+    </div>
+
+    {% if resultados %}
+    <div class="tabla-contenedor">
+        <table>
+            <thead>
+                <tr>
+                    <th>Huésped</th>
+                    <th>Documento</th>
+                    <th>Nacionalidad</th>
+                    <th>Estado actual</th>
+                    <th>Estancias</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for h in resultados %}
+            <tr>
+                <td>
+                    <a class="nombre-huesped" href="{{ url_for('huespedes.ficha', huesped_id=h.id) }}">{{ h.nombres }} {{ h.apellidos }}</a>{{ m.demo(h.es_demo) }}
+                </td>
+                <td class="documento">{{ h.tipo_documento }} {{ enmascarar(h.documento_ultimos) }}</td>
+                <td>{{ h.nacionalidad }}</td>
+                <td>
+                    {% if h.estado_actual %}
+                        {{ m.estado_estancia(h.estado_actual) }}
+                        {% if h.habitacion_actual %}<span class="ayuda-inline">· hab. {{ h.habitacion_actual }}</span>{% endif %}
+                    {% else %}
+                        <span class="ayuda-inline">Sin estancias</span>
+                    {% endif %}
+                </td>
+                <td>{{ h.total_estancias }}</td>
+                <td class="numero">
+                    <a class="boton secundario pequeno" href="{{ url_for('huespedes.ficha', huesped_id=h.id) }}">Ver ficha →</a>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {{ m.paginacion(pagina, paginas, 'huespedes.buscar', q=q) }}
+    {% else %}
+    <div class="mensaje info" role="status">
+        No existen resultados para «{{ q }}». Verifica la ortografía del nombre o escribe el número de documento completo.
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

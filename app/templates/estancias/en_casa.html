@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "macros.html" as m with context %}
+{% block titulo %}Huéspedes en casa{% endblock %}
+{% block contenido %}
+{% set aqui = request.full_path.rstrip('?') %}
+<div class="cabecera">
+    <div>
+        <h1>Huéspedes en casa</h1>
+        <p>{{ hoy|fecha }} · Huéspedes con llegada confirmada que están alojados en este momento.</p>
+    </div>
+    <a class="boton grande" href="{{ url_for('huespedes.registro') }}">+ Registrar huésped</a>
+</div>
+
+<section class="panel" aria-labelledby="t-en-casa">
+    <div class="titulo-panel">
+        <h2 id="t-en-casa">Huéspedes en casa ({{ total }})</h2>
+    </div>
+    {% if en_casa %}
+    <div class="tabla-contenedor">
+        <table>
+            <thead>
+                <tr>
+                    <th>Huésped</th>
+                    <th>Documento</th>
+                    <th>Hab.</th>
+                    <th>Ingreso</th>
+                    <th>Salida prevista</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for e in en_casa %}
+            <tr>
+                <td><a class="nombre-huesped" href="{{ url_for('huespedes.ficha', huesped_id=e.huesped_id) }}">{{ e.nombres }} {{ e.apellidos }}</a>{{ m.demo(e.huesped_demo) }}</td>
+                <td class="documento">{{ e.tipo_documento }} {{ enmascarar(e.documento_ultimos) }}</td>
+                <td>{{ e.habitacion or '—' }}</td>
+                <td>{{ e.fecha_ingreso|fecha }}</td>
+                <td>{{ e.fecha_salida_prevista|fecha }}
+                    {% if e.fecha_salida_prevista < hoy %}<span class="estado cancelada">Atrasada</span>
+                    {% elif e.fecha_salida_prevista == hoy %}<span class="estado sale-hoy">Sale hoy</span>{% endif %}</td>
+                <td>{{ m.estado_estancia(e.estado) }}</td>
+                <td class="numero">
+                    <div class="acciones-fila">
+                        <form method="post" action="{{ url_for('estancias.marcar_pendiente', estancia_id=e.id) }}">
+                            {{ form_simple.csrf_token }}
+                            <input type="hidden" name="volver" value="{{ aqui }}">
+                            <button type="submit" class="secundario pequeno" data-confirmar="¿Revertir la llegada de {{ e.nombres }} a pendiente?">Marcar pendiente</button>
+                        </form>
+                        <form method="post" action="{{ url_for('estancias.salida', estancia_id=e.id) }}">
+                            {{ form_simple.csrf_token }}
+                            <input type="hidden" name="volver" value="{{ aqui }}">
+                            <button type="submit" class="secundario pequeno" data-confirmar="¿Registrar la salida de {{ e.nombres }}?">Registrar salida</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {{ m.paginacion(pagina, paginas, 'estancias.en_casa') }}
+    {% else %}<p class="vacio">No hay huéspedes en casa.</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block titulo %}Recepción{% endblock %} · {{ NOMBRE_HOSTAL }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icono.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+{% set seccion = request.endpoint or '' %}
+<div class="estructura">
+    <aside class="lateral">
+        <a class="marca" href="{{ url_for('estancias.en_casa') }}">
+            <strong>{{ NOMBRE_HOSTAL }}</strong>
+            <span>Recepción · v{{ APP_VERSION }}</span>
+        </a>
+        {% if usuario_actual %}
+        <a class="boton-registrar" href="{{ url_for('huespedes.registro') }}">+ Registrar huésped</a>
+        <nav class="menu" aria-label="Menú principal">
+            <a href="{{ url_for('estancias.en_casa') }}" {% if seccion == 'estancias.en_casa' %}aria-current="page"{% endif %}>Huéspedes en casa</a>
+            <a href="{{ url_for('estancias.llegadas') }}" {% if seccion == 'estancias.llegadas' %}aria-current="page"{% endif %}>Llegadas pendientes</a>
+            <a href="{{ url_for('huespedes.buscar') }}" {% if seccion == 'huespedes.buscar' %}aria-current="page"{% endif %}>Buscar huésped</a>
+            <a href="{{ url_for('huespedes.historial') }}" {% if seccion == 'huespedes.historial' %}aria-current="page"{% endif %}>Historial</a>
+        </nav>
+        <div class="usuario-sesion">
+            <div>
+                <strong>{{ usuario_actual.nombre_completo }}</strong>
+                <span>{{ ROLES_USUARIO.get(usuario_actual.rol, usuario_actual.rol) }} · @{{ usuario_actual.usuario }}</span>
+            </div>
+            <form method="post" action="{{ url_for('auth.logout') }}" class="form-salir">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="boton-salir">Cerrar sesión</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="usuario-sesion">
+            <strong>Acceso restringido</strong>
+            <a class="enlace-lateral" href="{{ url_for('auth.login') }}">Iniciar sesión →</a>
+        </div>
+        {% endif %}
+    </aside>
+
+    <main class="contenido" id="contenido">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+        <div class="mensajes" role="status" aria-live="polite">
+            {% for categoria, texto in mensajes %}
+            <p class="mensaje {{ categoria }}">{{ texto }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% block contenido %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>
