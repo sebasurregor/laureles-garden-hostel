@@ -26,6 +26,8 @@ ENDPOINTS_PUBLICOS = {
     "auth.login",
     "estancias.health",
     "huespedes.politica_datos",
+    "huespedes.pre_registro",
+    "huespedes.pre_registro_confirmado",
     "static",
 }
 

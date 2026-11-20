@@ -1,5 +1,5 @@
-"""Huéspedes: registro en recepción (HU-01, HU-02, HU-06), búsqueda por nombre o documento (HU-05)
-y ficha con historial de estancias (HU-04)."""
+"""Huéspedes: registro en recepción (HU-01, HU-02, HU-06), pre-registro público,
+búsqueda por nombre o documento (HU-05) y ficha con historial de estancias (HU-04)."""
 from datetime import date, timedelta
 
 import psycopg
@@ -220,6 +220,197 @@ def verificar_documento():
 def politica_datos():
     """Política corta de tratamiento de datos (Ley 1581 de 2012) para leerle al huésped."""
     return render_template("politica_datos.html")
+
+
+# ---------------------------------------------------------------- Pre-registro público de huéspedes
+
+class FormularioPreRegistro(FlaskForm):
+    """Formulario público para que el huésped adelante sus datos antes de llegar al hostal."""
+
+    # Campo trampa anti-bots (oculto para personas; si llega lleno se ignora el envío).
+    sitio_web = StringField("Sitio web", validators=[Optional(), largo(100)])
+
+    # 1 · Documento
+    tipo_documento = SelectField(
+        "Tipo de documento",
+        choices=[("", "Selecciona…")] + list(TIPOS_DOCUMENTO.items()),
+        validators=[obligatorio()],
+    )
+    numero_documento = StringField(
+        "Número de documento",
+        validators=[
+            obligatorio(),
+            largo(30),
+            Regexp(r"^[A-Za-z0-9.\- ]+$", message="Usa solo letras, números, puntos o guiones."),
+        ],
+    )
+    # 2 · Datos personales
+    nombres = StringField("Nombres", validators=[obligatorio(), largo(250)])
+    apellidos = StringField("Apellidos", validators=[obligatorio(), largo(250)])
+    nacionalidad = StringField("Nacionalidad", validators=[obligatorio(), largo(60)])
+    telefono = StringField(
+        "Teléfono / WhatsApp",
+        validators=[
+            obligatorio(),
+            Regexp(
+                r"^\+?[0-9 ()\-]{7,20}$",
+                message="Escribe un teléfono válido, por ejemplo +57 300 123 4567.",
+            ),
+        ],
+    )
+    correo = StringField(
+        "Correo electrónico",
+        validators=[
+            Optional(),
+            largo(120),
+            Regexp(
+                r"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+                message="Escribe un correo válido, por ejemplo nombre@correo.com.",
+            ),
+        ],
+    )
+    fecha_nacimiento = FechaField("Fecha de nacimiento", validators=[Optional()])
+    acepta_datos = BooleanField(
+        "Autorizo el tratamiento de mis datos personales según la política del hostal",
+        validators=[
+            DataRequired(message="Debes autorizar el tratamiento de datos para completar el pre-registro.")
+        ],
+    )
+    # 3 · Estancia
+    canal = SelectField(
+        "¿Por dónde reservaste?",
+        choices=[("", "Selecciona…")] + [(c, c) for c in CANALES],
+        validators=[obligatorio()],
+    )
+    fecha_ingreso = FechaField("Fecha de ingreso", validators=[obligatorio()])
+    fecha_salida_prevista = FechaField("Fecha de salida prevista", validators=[obligatorio()])
+    procedencia = StringField("Procedencia (ciudad o país de origen)", validators=[obligatorio(), largo(250)])
+    destino = StringField("Destino (siguiente ciudad o país)", validators=[obligatorio(), largo(250)])
+    observaciones = TextAreaField("Hora estimada de llegada u observaciones", validators=[Optional(), largo(500)])
+
+    def validate(self, extra_validators=None):
+        valido = super().validate(extra_validators)
+        hoy_ = hoy()
+        ingreso, salida = self.fecha_ingreso.data, self.fecha_salida_prevista.data
+        if ingreso and ingreso < hoy_:
+            self.fecha_ingreso.errors.append("La fecha de ingreso no puede ser anterior a hoy.")
+            valido = False
+        if ingreso and salida and salida < ingreso:
+            self.fecha_salida_prevista.errors.append("La fecha de salida no puede ser anterior al ingreso.")
+            valido = False
+        if self.fecha_nacimiento.data and self.fecha_nacimiento.data > hoy_:
+            self.fecha_nacimiento.errors.append("La fecha de nacimiento no puede ser futura.")
+            valido = False
+        return valido
+
+
+def _guardar_pre_registro(form):
+    """Guarda el pre-registro en una transacción y crea la estancia en estado 'pendiente'.
+
+    Si el documento ya existe, no sobrescribe los datos personales previos desde una ruta pública:
+    únicamente registra la nueva estancia pendiente y evita duplicados para las mismas fechas.
+    """
+    datos = _datos_personales(form)
+    busqueda = texto_para_buscar(f"{datos['nombres']} {datos['apellidos']}")
+    tipo = form.tipo_documento.data
+    numero = form.numero_documento.data.strip()
+    huella = huella_documento(numero)
+
+    with transaccion():
+        existente = consultar_uno(
+            """SELECT id, acepta_tratamiento_datos
+                 FROM huespedes
+                WHERE tipo_documento = %s AND documento_hash = %s""",
+            (tipo, huella),
+        )
+        if existente:
+            huesped_id = existente["id"]
+            if not existente["acepta_tratamiento_datos"]:
+                ejecutar(
+                    """UPDATE huespedes
+                          SET acepta_tratamiento_datos = true,
+                              fecha_aceptacion_datos = now(),
+                              actualizado_en = now()
+                        WHERE id = %s""",
+                    (huesped_id,),
+                )
+        else:
+            huesped_id = ejecutar(
+                """INSERT INTO huespedes (nombres, apellidos, nombre_busqueda, tipo_documento,
+                          numero_documento_cifrado, documento_hash, documento_ultimos, nacionalidad,
+                          telefono_cifrado, correo_cifrado, fecha_nacimiento,
+                          acepta_tratamiento_datos, fecha_aceptacion_datos)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, now()) RETURNING id""",
+                (
+                    datos["nombres"],
+                    datos["apellidos"],
+                    busqueda,
+                    tipo,
+                    cifrar(numero),
+                    huella,
+                    ultimos_digitos(numero),
+                    datos["nacionalidad"],
+                    datos["telefono"],
+                    datos["correo"],
+                    datos["fecha_nacimiento"],
+                ),
+            ).fetchone()["id"]
+
+        duplicado = consultar_uno(
+            """SELECT id
+                 FROM estancias
+                WHERE huesped_id = %s
+                  AND estado = 'pendiente'
+                  AND fecha_ingreso = %s
+                  AND fecha_salida_prevista = %s
+                LIMIT 1""",
+            (huesped_id, form.fecha_ingreso.data, form.fecha_salida_prevista.data),
+        )
+        if not duplicado:
+            ejecutar(
+                """INSERT INTO estancias (huesped_id, habitacion, canal, fecha_ingreso,
+                          fecha_salida_prevista, checkin_en, procedencia, destino, estado, observaciones)
+                   VALUES (%s, NULL, %s, %s, %s, NULL, %s, %s, 'pendiente', %s)""",
+                (
+                    huesped_id,
+                    form.canal.data,
+                    form.fecha_ingreso.data,
+                    form.fecha_salida_prevista.data,
+                    form.procedencia.data.strip(),
+                    form.destino.data.strip(),
+                    (form.observaciones.data or "").strip() or None,
+                ),
+            )
+    return huesped_id
+
+
+@bp.route("/pre-registro", methods=["GET", "POST"])
+def pre_registro():
+    """Formulario público para que el huésped registre sus datos antes del check-in."""
+    form = FormularioPreRegistro()
+    if request.method == "GET":
+        form.fecha_ingreso.data = hoy()
+        form.fecha_salida_prevista.data = hoy() + timedelta(days=1)
+    elif form.validate_on_submit():
+        if (form.sitio_web.data or "").strip():
+            return redirect(url_for("huespedes.pre_registro_confirmado"))
+        try:
+            huesped_id = _guardar_pre_registro(form)
+        except psycopg.errors.UniqueViolation:
+            try:
+                huesped_id = _guardar_pre_registro(form)
+            except psycopg.errors.UniqueViolation:
+                flash("Recibimos dos envíos al mismo tiempo con este documento. Intenta nuevamente.", "error")
+                return render_template("huespedes/pre_registro.html", form=form)
+        current_app.logger.info("Pre-registro público recibido: huesped_id=%s", huesped_id)
+        return redirect(url_for("huespedes.pre_registro_confirmado"))
+    return render_template("huespedes/pre_registro.html", form=form)
+
+
+@bp.get("/pre-registro/confirmado")
+def pre_registro_confirmado():
+    """Pantalla de confirmación sin exponer datos personales."""
+    return render_template("huespedes/pre_registro_confirmado.html")
 
 
 # ---------------------------------------------------------------- Búsqueda de huéspedes (HU-05)

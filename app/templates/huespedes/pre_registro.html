@@ -1,0 +1,83 @@
+{% import "macros.html" as m with context %}
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Pre-registro de huésped · {{ NOMBRE_HOSTAL }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icono.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pre_registro.css') }}">
+</head>
+<body>
+<main class="pagina-centrada">
+    <div class="caja-publica">
+        <p class="etiqueta-version">{{ NOMBRE_HOSTAL }}</p>
+        <h1>Pre-registro de llegada</h1>
+        <p class="sub">
+            Adelanta tus datos antes de llegar al hostal para agilizar tu check-in.
+            Los campos con <span class="requerido">*</span> son obligatorios.
+        </p>
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+        <div class="mensajes" role="status" aria-live="polite">
+            {% for categoria, texto in mensajes %}
+            <p class="mensaje {{ categoria }}">{{ texto }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="post" action="{{ url_for('huespedes.pre_registro') }}" novalidate id="form-pre-registro">
+            {{ form.csrf_token }}
+            <div class="oculto" aria-hidden="true">
+                {{ form.sitio_web(tabindex="-1", autocomplete="off") }}
+            </div>
+
+            <h2 class="seccion-form"><span>01</span> Documento de identidad</h2>
+            <div class="rejilla">
+                {{ m.campo(form.tipo_documento, requerido=true) }}
+                {{ m.campo(form.numero_documento, requerido=true, autocomplete="off", inputmode="text", maxlength=30,
+                           placeholder="Ej. 1036555210") }}
+            </div>
+
+            <h2 class="seccion-form"><span>02</span> Datos personales</h2>
+            <div class="rejilla">
+                {{ m.campo(form.nombres, requerido=true, maxlength=250, autocomplete="given-name") }}
+                {{ m.campo(form.apellidos, requerido=true, maxlength=250, autocomplete="family-name") }}
+                {{ m.campo(form.nacionalidad, requerido=true, maxlength=60, list="lista-paises", placeholder="Ej. Colombia") }}
+                {{ m.campo(form.telefono, requerido=true, inputmode="tel", autocomplete="tel", placeholder="+57 300 123 4567") }}
+                {{ m.campo(form.correo, inputmode="email", autocomplete="email", placeholder="Opcional") }}
+                {{ m.campo(form.fecha_nacimiento, type="date") }}
+                <div class="ancho-completo caja-autorizacion">
+                    {{ m.casilla(form.acepta_datos, ayuda="Tus datos se almacenan cifrados únicamente para el registro legal de tu estadía.") }}
+                    <a href="{{ url_for('huespedes.politica_datos') }}" target="_blank" rel="noopener">Ver política de tratamiento de datos</a>
+                </div>
+            </div>
+            <datalist id="lista-paises">
+                {% for p in ['Colombia','Venezuela','Estados Unidos','Alemania','Francia','España','Argentina','México','Chile','Perú','Ecuador','Brasil','Países Bajos','Reino Unido','Canadá','Italia','Suiza'] %}<option value="{{ p }}">{% endfor %}
+            </datalist>
+
+            <h2 class="seccion-form"><span>03</span> Datos de tu estadía</h2>
+            <div class="rejilla">
+                {{ m.campo(form.canal, requerido=true) }}
+                <div></div>
+                {{ m.campo(form.fecha_ingreso, requerido=true, type="date") }}
+                {{ m.campo(form.fecha_salida_prevista, requerido=true, type="date") }}
+                {{ m.campo(form.procedencia, requerido=true, maxlength=250, placeholder="Ciudad o país de donde vienes") }}
+                {{ m.campo(form.destino, requerido=true, maxlength=250, placeholder="Siguiente ciudad o país") }}
+                {{ m.campo(form.observaciones, clase="ancho-completo", maxlength=500, rows=2,
+                           placeholder="Opcional. Ej. Llego sobre las 3:00 p. m.") }}
+            </div>
+
+            <div class="acciones">
+                <span class="ayuda">Al llegar a recepción solo deberás presentar tu documento físico.</span>
+                <button type="submit" class="grande">Enviar pre-registro →</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

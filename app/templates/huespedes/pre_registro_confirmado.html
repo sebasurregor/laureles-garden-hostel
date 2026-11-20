@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-registro recibido · {{ NOMBRE_HOSTAL }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icono.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pre_registro.css') }}">
+</head>
+<body>
+<main class="pagina-centrada">
+    <div class="caja-login caja-error">
+        <p class="icono-confirmacion" aria-hidden="true">✓</p>
+        <p class="etiqueta-version">{{ NOMBRE_HOSTAL }}</p>
+        <h1>¡Pre-registro recibido!</h1>
+        <p class="sub">
+            Tus datos ya quedaron registrados para recepción. Cuando llegues al hostal, presenta tu documento
+            de identidad para confirmar tu ingreso.
+        </p>
+        <a class="boton grande" href="{{ url_for('huespedes.pre_registro') }}">Registrar otro acompañante</a>
+    </div>
+</main>
+</body>
+</html>

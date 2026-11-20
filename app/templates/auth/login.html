@@ -8,6 +8,7 @@
     <title>Iniciar sesión · {{ NOMBRE_HOSTAL }}</title>
     <link rel="icon" href="{{ url_for('static', filename='icono.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pre_registro.css') }}">
 </head>
 <body>
 <main class="pagina-centrada">
@@ -33,6 +34,10 @@
             {{ m.campo(form.contrasena, requerido=true, autocomplete="current-password", placeholder="••••••••") }}
             <button type="submit" class="grande">Ingresar al panel →</button>
         </form>
+
+        <p class="pie-publico">
+            ¿Eres huésped? <a href="{{ url_for('huespedes.pre_registro') }}">Completa tu pre-registro aquí →</a>
+        </p>
     </div>
 </main>
 </body>

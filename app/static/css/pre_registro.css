@@ -1,0 +1,51 @@
+/* Estilos del formulario público de pre-registro y accesos directos.
+   Se carga como hoja separada para mantener intacto estilos.css y cumplir la CSP. */
+
+.caja-publica {
+    background: var(--blanco);
+    border-radius: 18px;
+    padding: 32px;
+    width: min(760px, 100%);
+    box-shadow: 0 20px 50px #0b1f2b55;
+    margin: 16px 0;
+}
+
+.caja-publica h1 {
+    margin: 0 0 6px;
+    color: var(--azul);
+    font-size: 26px;
+}
+
+.caja-publica .sub {
+    margin: 0 0 22px;
+    color: var(--texto-suave);
+}
+
+.pie-publico {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--borde);
+    text-align: center;
+    font-size: 14px;
+    color: var(--texto-suave);
+}
+
+.acciones-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.icono-confirmacion {
+    font-size: 46px;
+    font-weight: 800;
+    color: var(--ok);
+    margin: 0 0 8px;
+}
+
+@media (max-width: 650px) {
+    .caja-publica {
+        padding: 22px 18px;
+    }
+}

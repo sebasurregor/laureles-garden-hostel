@@ -8,7 +8,10 @@
         <h1>Llegadas pendientes</h1>
         <p>{{ hoy|fecha }} · Confirma la llegada de los huéspedes cuando ingresen al hostal.</p>
     </div>
-    <a class="boton grande" href="{{ url_for('huespedes.registro', estado='pendiente') }}">+ Nueva llegada pendiente</a>
+    <div class="acciones-cabecera">
+        <a class="boton secundario" href="{{ url_for('huespedes.pre_registro') }}" target="_blank" rel="noopener">Abrir formulario de huéspedes</a>
+        <a class="boton grande" href="{{ url_for('huespedes.registro', estado='pendiente') }}">+ Nueva llegada pendiente</a>
+    </div>
 </div>
 
 <section class="panel" aria-labelledby="t-pendientes">
